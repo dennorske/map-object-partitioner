@@ -1,97 +1,214 @@
-'use strict';
-(function() {
-  const map = document.getElementById('map');
-  const ctx = map.getContext('2d');
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
 
-  const imageMap = new Image();
-  const IMAGE_WIDTH  = 6000;
-  const IMAGE_HEIGHT = 6000;
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
 
-  // center coordinates and zoom
-  let cx = 0, cy = 0, z = 0.1;
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId])
+/******/ 			return installedModules[moduleId].exports;
 
-  const at = function(mouseX, mouseY) {
-    const x = (mouseX - map.width / 2) / z + cx;
-    const y = (mouseY - map.height / 2) / z + cy;
-    return [ x, y ];
-  };
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			exports: {},
+/******/ 			id: moduleId,
+/******/ 			loaded: false
+/******/ 		};
 
-  const update = function() {
-    const WIDTH = map.width;
-    const HEIGHT = map.height;
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
 
-    // ensure that we don't go outside of map bounds
-    if(z < Math.min(WIDTH / IMAGE_WIDTH, HEIGHT / IMAGE_HEIGHT))
-      z = Math.min(WIDTH / IMAGE_WIDTH, HEIGHT / IMAGE_HEIGHT);
-    if(cx - WIDTH / 2 / z < -IMAGE_WIDTH / 2)
-      cx = -IMAGE_WIDTH / 2 + WIDTH / 2 / z;
-    if(cx + WIDTH / 2 / z > IMAGE_WIDTH / 2)
-      cx = IMAGE_WIDTH / 2 - WIDTH / 2 / z;
-    if(cy - HEIGHT / 2 / z < -IMAGE_HEIGHT / 2)
-      cy = -IMAGE_HEIGHT / 2 + HEIGHT / 2 / z;
-    if(cy + HEIGHT / 2 / z > IMAGE_HEIGHT / 2)
-      cy = IMAGE_HEIGHT / 2 - HEIGHT / 2 / z;
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
 
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
 
-    // find rectangle of source image
-    const sx = IMAGE_WIDTH / 2 + cx - WIDTH / 2 / z;
-    const sy = IMAGE_HEIGHT / 2 + cy - HEIGHT / 2 / z;
-    const sw = WIDTH / z;
-    const sh = HEIGHT / z;
 
-    // draw image
-    ctx.drawImage(imageMap, sx, sy, sw, sh, 0, 0, WIDTH, HEIGHT);
-  };
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
 
-  const NONE = Symbol('NONE');
-  const DRAG = Symbol('DRAG');
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
 
-  // drag
-  let mode = NONE;
-  let lastX, lastY;
-  map.addEventListener('mousedown', function(e) {
-    if(e.button === 0 && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-      e.preventDefault();
-      mode = DRAG;
-    }
-    lastX = e.offsetX; lastY = e.offsetY;
-  });
-  map.addEventListener('mousemove', function(e) {
-    const dx = e.offsetX - lastX, dy = e.offsetY - lastY;
-    lastX = e.offsetX; lastY = e.offsetY;
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
 
-    switch(mode) {
-      case DRAG:
-        cx -= dx / z;
-        cy -= dy / z;
-        update();
-        break;
-    }
-  });
-  map.addEventListener('mouseup', function(e) {
-    mode = NONE;
-  });
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ function(module, exports, __webpack_require__) {
 
-  // zoom
-  map.addEventListener('wheel', function(e) {
-    e.preventDefault();
-    let zoomScale = Math.pow(2, -e.deltaY / 200);
+	'use strict';
+	const map = __webpack_require__(1);
 
-    let mp = at(e.offsetX, e.offsetY);
-    let mx = mp[0], my = mp[1];
+	const SPACE_KEY = 32;
+	let keys = {};
 
-    cx = (cx - mx) / zoomScale + mx;
-    cy = (cy - my) / zoomScale + my;
-    z *= zoomScale;
+	const MODE_NONE = 0;
+	const MODE_DRAG_MAP = 1;
 
-    update();
-  });
+	window.addEventListener('keydown', function(e) {
+	  switch(e.keyCode) {
+	    case SPACE_KEY:
+	      e.preventDefault();
+	      keys[e.keyCode] = true;
+	      break;
+	  }
+	});
 
-  // load image
-  imageMap.onload = function() { update(); };
-  imageMap.src = 'SanAndreas-TerrainMap.jpg';
+	window.addEventListener('keyup', function(e) {
+	  switch(e.keyCode) {
+	    case SPACE_KEY:
+	      e.preventDefault();
+	      keys[e.keyCode] = true;
+	      break;
+	  }
+	});
 
-  update();
-  window.update = update;
-})();
+	let lastX, lastY, dragMode;
+	map.canvas.addEventListener('mousedown', function(e) {
+	  lastX = e.offsetX; lastY = e.offsetY;
+
+	  e.preventDefault();
+	  if(keys[SPACE_KEY]) {
+	    dragMode = MODE_DRAG_MAP;
+	  } else {
+	    dragMode = MODE_NONE;
+	  }
+	});
+	map.canvas.addEventListener('mousemove', function(e) {
+	  const dx = e.offsetX - lastX, dy = e.offsetY - lastY;
+	  lastX = e.offsetX; lastY = e.offsetY;
+
+	  switch(dragMode) {
+	    case MODE_DRAG_MAP:
+	      map.move(dx, dy);
+	      break;
+	  }
+	});
+	map.canvas.addEventListener('mouseup', function(e) {
+	  dragMode = MODE_NONE;
+	});
+
+	map.canvas.addEventListener('wheel', function(e) {
+	  e.preventDefault();
+	  const scale = Math.pow(2, e.deltaY / 200);
+	  const mp = map.at(e.offsetX, e.offsetY);
+	  map.zoom(scale, mp[0], mp[1]);
+	});
+
+
+/***/ },
+/* 1 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	// get map canvas
+	const map = exports.canvas = document.getElementById('map');
+	const ctx = map.getContext('2d');
+
+	// TODO: ensure that (ctx != null)
+
+	// map image
+	const mapImage = new Image();
+
+	// in-world objects
+	let objects = [];
+
+	// center of view
+	const view = {
+	  // center of view
+	  x: 0,
+	  y: 0,
+	  // zoom level
+	  z: 0.1,
+	};
+
+	// update world objects
+	const updateObjects = exports.updateObjects = function(newObjects) {
+	  objects = newObjects;
+	};
+
+	let nextUpdate = null;
+	const doUpdate = function() {
+	  nextUpdate = null;
+
+	  // for convenience, define WIDTH/2 and HEIGHT/2
+	  const w = map.width / 2;
+	  const h = map.height / 2;
+
+	  // ensure we don't look outside the map
+	  if(view.z < Math.min(w / 3000, h / 3000))
+	    view.z = Math.min(w / 3000, h / 3000);
+	  if(view.x - w / view.z < -3000)
+	    view.x = -3000 + w / view.z;
+	  if(view.x + w / view.z > 3000)
+	    view.x = 3000 - w / view.z;
+	  if(view.y - h / view.z < -3000)
+	    view.y = -3000 + h / view.z;
+	  if(view.y + h / view.z > 3000)
+	    view.y = 3000 - h / view.z;
+
+	  // find which part of map image to show
+	  const sx = 3000 + view.x - w / view.z;
+	  const sy = 3000 + view.y - h / view.z;
+	  const sw = map.width / view.z;
+	  const sh = map.height / view.z;
+
+	  // draw map image
+	  ctx.clearRect(0, 0, map.width, map.height);
+	  ctx.drawImage(mapImage, sx, sy, sw, sh, 0, 0, map.width, map.height);
+	};
+
+	// update map view
+	const updateView = exports.updateView = function() {
+	  if(nextUpdate == null)
+	    nextUpdate = requestAnimationFrame(doUpdate);
+	};
+
+	// get coordinates of position on canvas
+	const at = exports.at = function(mx, my) {
+	  const px = (mx - map.width / 2) / view.z + view.x;
+	  const py = (my - map.height / 2) / view.z + view.y;
+	  return [ px, py ];
+	};
+
+	// zoom, optionally fixing a point
+	const zoom = exports.zoom = function(scale, fx, fy) {
+	  if(fx == null || fy == null) {
+	    fx = view.x; fy = view.y;
+	  }
+
+	  const zMin = Math.min(map.width / 6000, map.height / 6000);
+	  if(view.z / scale < zMin)
+	    scale = view.z / zMin;
+
+	  view.x = (view.x - fx) * scale + fx;
+	  view.y = (view.y - fy) * scale + fy;
+	  view.z /= scale;
+
+	  updateView();
+	};
+
+	// move map
+	const move = exports.move = function(dx, dy) {
+	  view.x -= dx / view.z;
+	  view.y -= dy / view.z;
+
+	  updateView();
+	};
+
+	// load map image
+	mapImage.onload = () => updateView();
+	mapImage.src = 'SanAndreas-TerrainMap.jpg';
+
+
+/***/ }
+/******/ ]);
