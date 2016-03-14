@@ -37,6 +37,8 @@ const doUpdate = function() {
   // ensure we don't look outside the map
   if(view.z < Math.min(w / 3000, h / 3000))
     view.z = Math.min(w / 3000, h / 3000);
+  if(view.z > 1)
+    view.z = 1;
   if(view.x - w / view.z < -3000)
     view.x = -3000 + w / view.z;
   if(view.x + w / view.z > 3000)
@@ -76,7 +78,10 @@ const zoom = exports.zoom = function(scale, fx, fy) {
     fx = view.x; fy = view.y;
   }
 
+  const zMax = 1;
   const zMin = Math.min(map.width / 6000, map.height / 6000);
+  if(view.z / scale > zMax)
+    scale = view.z / zMax;
   if(view.z / scale < zMin)
     scale = view.z / zMin;
 

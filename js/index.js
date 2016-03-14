@@ -20,7 +20,7 @@ window.addEventListener('keyup', function(e) {
   switch(e.keyCode) {
     case SPACE_KEY:
       e.preventDefault();
-      keys[e.keyCode] = true;
+      keys[e.keyCode] = false;
       break;
   }
 });
