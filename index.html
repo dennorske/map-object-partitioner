@@ -7,14 +7,29 @@
     #map {
       border: 1px solid black;
     }
+
+    ul {
+      list-style-type: none;
+    }
   </style>
   <link rel="stylesheet" href="kbd.css" />
 </head>
 
 <body>
   <div style="float: right; text-align: right;">
-    <div>Current coordinates:</div>
-    <div><span id="coordinates">???</span></div>
+    <p>
+      <div class="bold">Current coordinates:</div>
+      <div><span id="coordinates">???</span></div>
+    </p>
+
+    <p>
+      <div class="bold">Current polygons:</div>
+      <div>
+        <ul id="polygon-list">
+        </ul>
+      </div>
+    </p>
+
   </div>
 
   <div>
@@ -22,7 +37,9 @@
   </div>
 
   <p>
-    Scroll to zoom. Click and drag to pan.
+    Scroll to zoom. Click and drag to pan. <br />
+    Double-click to begin to draw an area, then continue to double-click at points to shape out the area. Right-click to complete, <kbd>ESC</kbd> to cancel and <kbd>SHIFT</kbd> + right click to undo last point. <b>NB!</b> Self-intersecting polygons are invalid and may cause the program to not function properly. <br />
+    When you click update below, all objects will be sorted by which polygon(s) they are contained in. If an object is contained in no polygon, or in more than one polygon, it will be highlighted on the map. When you click save, you will get a list sorted by the first polygon each object appear in.
   </p>
 
   <p>
@@ -36,7 +53,14 @@
 
   <p>
     <button id="load-btn">Load file</button> <input type="file" id="file-input" style="display:none;" />
-    <!-- <button id="update-btn">Update</button> -->
+    <button id="zoom-out-btn">Zoom out</button>
+    <button id="update-btn">Update</button>
+    <button id="save-btn">Save</button>
+  </p>
+  
+  <p>
+    <div class="bold">Log:</div>
+    <textarea disabled id="log-output" style="resize:none;" rows="20" cols="80"></textarea>
   </p>
 
   <!-- scripts -->

@@ -1,5 +1,7 @@
 'use strict';
 
+const utils = require('./utils');
+
 const ZOOM_MAX = 4;
 
 // get map canvas
@@ -12,7 +14,11 @@ const ctx = map.getContext('2d');
 const mapImage = new Image();
 
 // in-world objects
-let objects = [];
+let objects = exports.objects = [ ];
+
+// areas
+let areas = exports.areas = [ ];
+let currentArea = exports.currentArea = [];
 
 // center of view
 const view = {
@@ -25,7 +31,7 @@ const view = {
 
 // update world objects
 const updateObjects = exports.updateObjects = function(newObjects) {
-  objects = newObjects;
+  objects = exports.objects = newObjects;
   updateView();
 };
 
@@ -62,7 +68,6 @@ const doUpdate = function() {
   ctx.drawImage(mapImage, 3000 + x0, 3000 - y1, x1 - x0, y1 - y0, 0, 0, map.width, map.height);
 
   // draw objects
-  const dotSize = 3 * Math.sqrt(view.z);
   const styles = {
     'AddStaticVehicle': '#ff0000',
     'AddStaticVehicleEx': '#00ff00',
@@ -77,10 +82,68 @@ const doUpdate = function() {
 
     const p = where(obj.x, obj.y);
 
+    let dotSize = 3 * Math.sqrt(view.z);
+    if(obj.areas != null) {
+      if(obj.areas.length !== 1)
+        dotSize = 9 * Math.sqrt(view.z);
+    }
+
     ctx.fillStyle = styles[obj.type];
     ctx.beginPath();
     ctx.arc(p[0], p[1], dotSize, 0, 2 * Math.PI);
     ctx.fill();
+  }
+
+  // draw areas
+  for(let j = 0; j < areas.length; j++) {
+    const area = areas[j];
+
+    ctx.fillStyle = 'rgba(0,0,255,0.1)';
+    ctx.strokeStyle = 'rgb(0,0,255)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for(let i = 0; i < area.length; i++) {
+      const mp = area[i];
+      const pt = where(mp[0], mp[1]);
+
+      if(i === 0)
+        ctx.moveTo(pt[0], pt[1]);
+      else
+        ctx.lineTo(pt[0], pt[1]);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // find center of mass and area
+    const C = utils.findCOM(area);
+    const pt = where(C[0], C[1]);
+
+    const fontSize = Math.sqrt(C[2]) / 5 * view.z;
+    ctx.font = (fontSize | 0) + 'px sans-serif';
+    ctx.fillStyle = 'rgb(0,128,255)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'center';
+    ctx.fillText(area.id, pt[0], pt[1]);
+  }
+
+  // draw current area
+  if(currentArea.length > 1) {
+    ctx.fillStyle = 'rgba(0,0,255,0.1)';
+    ctx.strokeStyle = 'rgb(0,0,255)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for(let i = 0; i < currentArea.length; i++) {
+      const mp = currentArea[i];
+      const pt = where(mp[0], mp[1]);
+
+      if(i === 0)
+        ctx.moveTo(pt[0], pt[1]);
+      else
+        ctx.lineTo(pt[0], pt[1]);
+    }
+    ctx.fill();
+    ctx.stroke();
   }
 };
 
@@ -119,6 +182,15 @@ const zoom = exports.zoom = function(scale, fx, fy) {
   view.x = (view.x - fx) * scale + fx;
   view.y = (view.y - fy) * scale + fy;
   view.z /= scale;
+
+  updateView();
+};
+
+// zoom rectangle into view
+const zoomRect = exports.zoomRect = function(x0, x1, y0, y1) {
+  view.x = (x0 + x1) / 2;
+  view.y = (y0 + y1) / 2;
+  view.z = 1 / Math.max((x1 - x0) / map.width, (y1 - y0) / map.height);
 
   updateView();
 };
