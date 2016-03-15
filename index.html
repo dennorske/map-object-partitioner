@@ -12,12 +12,31 @@
 </head>
 
 <body>
+  <div style="float: right; text-align: right;">
+    <div>Current coordinates:</div>
+    <div><span id="coordinates">???</span></div>
+  </div>
+
   <div>
     <canvas id="map" width="600" height="600"></canvas>
   </div>
 
   <p>
-    Scroll to zoom. Hold down <kbd>Space</kbd> and drag to pan.
+    Scroll to zoom. Click and drag to pan.
+  </p>
+
+  <p>
+    The objects are color coded as follows:
+    <ul>
+      <li><span style="font-weight: bold; color: #ff0000;">Red</span> is <code>AddStaticVehicle</code></li>
+      <li><span style="font-weight: bold; color: #00cc00;">Green</span> is <code>AddStaticVehicleEx</code></li>
+      <li><span style="font-weight: bold; color: #cccc00;">Yellow</span> is <code>CreateDynamicObject</code></li>
+    </ul>
+  </p>
+
+  <p>
+    <button id="load-btn">Load file</button> <input type="file" id="file-input" style="display:none;" />
+    <!-- <button id="update-btn">Update</button> -->
   </p>
 
   <!-- scripts -->
