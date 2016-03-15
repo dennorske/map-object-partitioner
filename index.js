@@ -188,7 +188,7 @@
 
 	  // draw map image
 	  ctx.clearRect(0, 0, map.width, map.height);
-	  ctx.drawImage(mapImage, 3000 + x0, 3000 + y0, x1 - x0, y1 - y0, 0, 0, map.width, map.height);
+	  ctx.drawImage(mapImage, 3000 + x0, 3000 - y1, x1 - x0, y1 - y0, 0, 0, map.width, map.height);
 
 	  // draw objects
 	  const dotSize = 3 * Math.sqrt(view.z);
@@ -222,14 +222,14 @@
 	// get coordinates of position on canvas
 	const at = exports.at = function(mx, my) {
 	  const px = (mx - map.width / 2) / view.z + view.x;
-	  const py = (my - map.height / 2) / view.z + view.y;
+	  const py = -(my - map.height / 2) / view.z + view.y;
 	  return [ px, py ];
 	};
 
 	// get canvas position of coordinate
 	const where = exports.where = function(px, py) {
 	  const cx = (px - view.x) * view.z + map.width / 2;
-	  const cy = (py - view.y) * view.z + map.height / 2;
+	  const cy = -(py - view.y) * view.z + map.height / 2;
 	  return [ cx, cy ];
 	};
 
@@ -255,7 +255,7 @@
 	// move map
 	const move = exports.move = function(dx, dy) {
 	  view.x -= dx / view.z;
-	  view.y -= dy / view.z;
+	  view.y += dy / view.z;
 
 	  updateView();
 	};
