@@ -79,7 +79,7 @@
 	  }
 	});
 	
-	let lastX, lastY, dragMode;
+	let lastX, lastY, dragMode, ignoreDrag = null;
 	map.canvas.addEventListener('mouseenter', function(e) {
 	  updateCoordinates(e.offsetX, e.offsetY);
 	});
@@ -92,6 +92,9 @@
 	
 	  e.preventDefault();
 	  if(e.buttons === 1) {
+	    if(ignoreDrag != null)
+	      clearTimeout(ignoreDrag);
+	    ignoreDrag = setTimeout(() => (ignoreDrag = null), 25);
 	    dragMode = MODE_DOWN;
 	  } else if(e.buttons === 2) {
 	    if(e.shiftKey) { // cancel last point
@@ -162,6 +165,8 @@
 	  const dx = e.offsetX - lastX, dy = e.offsetY - lastY;
 	  lastX = e.offsetX; lastY = e.offsetY;
 	
+	  if(ignoreDrag != null)
+	    return;
 	  switch(dragMode) {
 	    case MODE_DOWN:
 	      dragMode = MODE_DRAG_MAP;
@@ -175,6 +180,10 @@
 	});
 	map.canvas.addEventListener('mouseup', function(e) {
 	  updateCoordinates(e.offsetX, e.offsetY);
+	  if(ignoreDrag != null) {
+	    clearTimeout(ignoreDrag);
+	    ignoreDrag = null;
+	  }
 	  dragMode = MODE_NONE;
 	});
 	map.canvas.addEventListener('dblclick', function(e) {
@@ -241,7 +250,6 @@
 	document.getElementById('save-btn').addEventListener('click', function(e) {
 	  // get objects and polygons
 	  const objects = map.objects;
-	  const areas = map.areas;
 	
 	  // save objects to file
 	  code.saveObjects(objects)
@@ -250,6 +258,11 @@
 	    .catch((error) => {
 	      console.error(error.stack || error);
 	    });
+	});
+	
+	document.getElementById('hide-valid').addEventListener('change', function(e) {
+	  map.hideValid = e.target.checked;
+	  map.updateView();
 	});
 
 
@@ -271,6 +284,8 @@
 	
 	// map image
 	const mapImage = new Image();
+	
+	// should hide objects in valid polygon?
 	
 	// in-world objects
 	let objects = exports.objects = [ ];
@@ -302,20 +317,6 @@
 	  const w = map.width / 2;
 	  const h = map.height / 2;
 	
-	  // ensure we don't look outside the map
-	  if(view.z < Math.min(w / 3000, h / 3000))
-	    view.z = Math.min(w / 3000, h / 3000);
-	  if(view.z > ZOOM_MAX)
-	    view.z = ZOOM_MAX;
-	  if(view.x - w / view.z < -3000)
-	    view.x = -3000 + w / view.z;
-	  if(view.x + w / view.z > 3000)
-	    view.x = 3000 - w / view.z;
-	  if(view.y - h / view.z < -3000)
-	    view.y = -3000 + h / view.z;
-	  if(view.y + h / view.z > 3000)
-	    view.y = 3000 - h / view.z;
-	
 	  // calculate bounds
 	  const x0 = view.x - w / view.z;
 	  const x1 = view.x + w / view.z;
@@ -328,10 +329,12 @@
 	
 	  // draw objects
 	  const styles = {
-	    'AddStaticVehicle': '#ff0000',
-	    'AddStaticVehicleEx': '#00ff00',
-	    'CreateDynamicObject': '#ffff00',
+	    'AddStaticVehicle': 'rgba(255,0,0,1)',
+	    'AddStaticVehicleEx': 'rgba(0,255,0,1)',
+	    'CreateObject': 'rgba(255,128,0,1)',
+	    'CreateDynamicObject': 'rgba(255,255,0,1)',
 	    'undefined': 'gray',
+	    'undefined:hide': 'gray',
 	  };
 	  for(let i = 0; i < objects.length; i++) {
 	    const obj = objects[i];
@@ -341,13 +344,17 @@
 	
 	    const p = where(obj.x, obj.y);
 	
-	    let dotSize = 3 * Math.sqrt(view.z);
-	    if(obj.areas != null) {
-	      if(obj.areas.length !== 1)
-	        dotSize = 9 * Math.sqrt(view.z);
+	    let dotSize = 4 * Math.sqrt(view.z);
+	    let hide = false;
+	    if(obj.areas != null && obj.areas.length === 1) {
+	      dotSize = 2 * Math.sqrt(view.z);
+	      hide = true;
 	    }
 	
-	    ctx.fillStyle = styles[obj.type];
+	    if(hide && exports.hideValid)
+	      continue;
+	
+	    ctx.fillStyle = styles[obj.type + (hide ? ':hide' : '')];
 	    ctx.beginPath();
 	    ctx.arc(p[0], p[1], dotSize, 0, 2 * Math.PI);
 	    ctx.fill();
@@ -432,11 +439,8 @@
 	    fx = view.x; fy = view.y;
 	  }
 	
-	  const zMin = Math.min(map.width / 6000, map.height / 6000);
 	  if(view.z / scale > ZOOM_MAX)
 	    scale = view.z / ZOOM_MAX;
-	  if(view.z / scale < zMin)
-	    scale = view.z / zMin;
 	
 	  view.x = (view.x - fx) * scale + fx;
 	  view.y = (view.y - fy) * scale + fy;
@@ -591,7 +595,7 @@
 	    .then((text) => {
 	      utils.log('Parsing file...');
 	
-	      const pattern = new RegExp('(AddStaticVehicle(?:Ex)?|CreateDynamicObject)\\(([0-9., +-]*)\\)', 'gm');
+	      const pattern = new RegExp('(AddStaticVehicle(?:Ex)?|Create(?:Dynamic)?Object)\\(([0-9., +-]*)\\)', 'gm');
 	      let m;
 	
 	      const objects = [];
@@ -604,6 +608,7 @@
 	        switch(func) {
 	          case 'AddStaticVehicle':
 	          case 'AddStaticVehicleEx':
+	          case 'CreateObject':
 	          case 'CreateDynamicObject':
 	            obj.id = args[0];
 	            obj.x = args[1];

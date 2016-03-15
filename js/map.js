@@ -13,6 +13,8 @@ const ctx = map.getContext('2d');
 // map image
 const mapImage = new Image();
 
+// should hide objects in valid polygon?
+
 // in-world objects
 let objects = exports.objects = [ ];
 
@@ -43,20 +45,6 @@ const doUpdate = function() {
   const w = map.width / 2;
   const h = map.height / 2;
 
-  // ensure we don't look outside the map
-  if(view.z < Math.min(w / 3000, h / 3000))
-    view.z = Math.min(w / 3000, h / 3000);
-  if(view.z > ZOOM_MAX)
-    view.z = ZOOM_MAX;
-  if(view.x - w / view.z < -3000)
-    view.x = -3000 + w / view.z;
-  if(view.x + w / view.z > 3000)
-    view.x = 3000 - w / view.z;
-  if(view.y - h / view.z < -3000)
-    view.y = -3000 + h / view.z;
-  if(view.y + h / view.z > 3000)
-    view.y = 3000 - h / view.z;
-
   // calculate bounds
   const x0 = view.x - w / view.z;
   const x1 = view.x + w / view.z;
@@ -69,10 +57,12 @@ const doUpdate = function() {
 
   // draw objects
   const styles = {
-    'AddStaticVehicle': '#ff0000',
-    'AddStaticVehicleEx': '#00ff00',
-    'CreateDynamicObject': '#ffff00',
+    'AddStaticVehicle': 'rgba(255,0,0,1)',
+    'AddStaticVehicleEx': 'rgba(0,255,0,1)',
+    'CreateObject': 'rgba(255,128,0,1)',
+    'CreateDynamicObject': 'rgba(255,255,0,1)',
     'undefined': 'gray',
+    'undefined:hide': 'gray',
   };
   for(let i = 0; i < objects.length; i++) {
     const obj = objects[i];
@@ -82,13 +72,17 @@ const doUpdate = function() {
 
     const p = where(obj.x, obj.y);
 
-    let dotSize = 3 * Math.sqrt(view.z);
-    if(obj.areas != null) {
-      if(obj.areas.length !== 1)
-        dotSize = 9 * Math.sqrt(view.z);
+    let dotSize = 4 * Math.sqrt(view.z);
+    let hide = false;
+    if(obj.areas != null && obj.areas.length === 1) {
+      dotSize = 2 * Math.sqrt(view.z);
+      hide = true;
     }
 
-    ctx.fillStyle = styles[obj.type];
+    if(hide && exports.hideValid)
+      continue;
+
+    ctx.fillStyle = styles[obj.type + (hide ? ':hide' : '')];
     ctx.beginPath();
     ctx.arc(p[0], p[1], dotSize, 0, 2 * Math.PI);
     ctx.fill();
@@ -173,11 +167,8 @@ const zoom = exports.zoom = function(scale, fx, fy) {
     fx = view.x; fy = view.y;
   }
 
-  const zMin = Math.min(map.width / 6000, map.height / 6000);
   if(view.z / scale > ZOOM_MAX)
     scale = view.z / ZOOM_MAX;
-  if(view.z / scale < zMin)
-    scale = view.z / zMin;
 
   view.x = (view.x - fx) * scale + fx;
   view.y = (view.y - fy) * scale + fy;

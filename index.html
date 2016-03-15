@@ -48,16 +48,25 @@
       <li><span style="font-weight: bold; color: #ff0000;">Red</span> is <code>AddStaticVehicle</code></li>
       <li><span style="font-weight: bold; color: #00cc00;">Green</span> is <code>AddStaticVehicleEx</code></li>
       <li><span style="font-weight: bold; color: #cccc00;">Yellow</span> is <code>CreateDynamicObject</code></li>
+      <li><span style="font-weight: bold; color: #cc6600;">Orange</span> is <code>CreateObject</code></li>
     </ul>
   </p>
 
   <p>
-    <button id="load-btn">Load file</button> <input type="file" id="file-input" style="display:none;" />
-    <button id="zoom-out-btn">Zoom out</button>
-    <button id="update-btn">Update</button>
-    <button id="save-btn">Save</button>
+    <div>
+      <button id="load-btn">Load file</button> <input type="file" id="file-input" style="display:none;" />
+      <button id="zoom-out-btn">Zoom out</button>
+      <button id="update-btn">Update</button>
+      <button id="save-btn">Save</button>
+    </div>
+
+    <div>
+      <label for="hide-valid">
+        <input type="checkbox" id="hide-valid" /> Hide objects in valid polygon
+      </label>
+    </div>
   </p>
-  
+
   <p>
     <div class="bold">Log:</div>
     <textarea disabled id="log-output" style="resize:none;" rows="20" cols="80"></textarea>

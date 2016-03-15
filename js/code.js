@@ -19,7 +19,7 @@ exports.parseFile = function(file) {
     .then((text) => {
       utils.log('Parsing file...');
 
-      const pattern = new RegExp('(AddStaticVehicle(?:Ex)?|CreateDynamicObject)\\(([0-9., +-]*)\\)', 'gm');
+      const pattern = new RegExp('(AddStaticVehicle(?:Ex)?|Create(?:Dynamic)?Object)\\(([0-9., +-]*)\\)', 'gm');
       let m;
 
       const objects = [];
@@ -32,6 +32,7 @@ exports.parseFile = function(file) {
         switch(func) {
           case 'AddStaticVehicle':
           case 'AddStaticVehicleEx':
+          case 'CreateObject':
           case 'CreateDynamicObject':
             obj.id = args[0];
             obj.x = args[1];

@@ -33,7 +33,7 @@ window.addEventListener('keydown', function(e) {
   }
 });
 
-let lastX, lastY, dragMode;
+let lastX, lastY, dragMode, ignoreDrag = null;
 map.canvas.addEventListener('mouseenter', function(e) {
   updateCoordinates(e.offsetX, e.offsetY);
 });
@@ -46,6 +46,9 @@ map.canvas.addEventListener('mousedown', function(e) {
 
   e.preventDefault();
   if(e.buttons === 1) {
+    if(ignoreDrag != null)
+      clearTimeout(ignoreDrag);
+    ignoreDrag = setTimeout(() => (ignoreDrag = null), 25);
     dragMode = MODE_DOWN;
   } else if(e.buttons === 2) {
     if(e.shiftKey) { // cancel last point
@@ -116,6 +119,8 @@ map.canvas.addEventListener('mousemove', function(e) {
   const dx = e.offsetX - lastX, dy = e.offsetY - lastY;
   lastX = e.offsetX; lastY = e.offsetY;
 
+  if(ignoreDrag != null)
+    return;
   switch(dragMode) {
     case MODE_DOWN:
       dragMode = MODE_DRAG_MAP;
@@ -129,6 +134,10 @@ map.canvas.addEventListener('mousemove', function(e) {
 });
 map.canvas.addEventListener('mouseup', function(e) {
   updateCoordinates(e.offsetX, e.offsetY);
+  if(ignoreDrag != null) {
+    clearTimeout(ignoreDrag);
+    ignoreDrag = null;
+  }
   dragMode = MODE_NONE;
 });
 map.canvas.addEventListener('dblclick', function(e) {
@@ -195,7 +204,6 @@ document.getElementById('update-btn').addEventListener('click', function(e) {
 document.getElementById('save-btn').addEventListener('click', function(e) {
   // get objects and polygons
   const objects = map.objects;
-  const areas = map.areas;
 
   // save objects to file
   code.saveObjects(objects)
@@ -204,4 +212,9 @@ document.getElementById('save-btn').addEventListener('click', function(e) {
     .catch((error) => {
       console.error(error.stack || error);
     });
+});
+
+document.getElementById('hide-valid').addEventListener('change', function(e) {
+  map.hideValid = e.target.checked;
+  map.updateView();
 });
